@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      String   // "admin", "teacher", "parent", "student"
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  teacherGrades    Grade[]   @relation("TeacherGrades")
+  parentStudents   Student[] @relation("ParentStudents")
+
+  @@map("users")
+}
+
+model Student {
+  id             Int      @id @default(autoincrement())
+  fullName       String
+  dateOfBirth    DateTime
+  level          String
+  parentsContact String
+  cin            String   @unique
+  previousSchool String?
+  parentId       Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  parent     User?        @relation("ParentStudents", fields: [parentId], references: [id])
+  grades     Grade[]
+  attendance Attendance[]
+
+  @@map("students")
+}
+
+model Grade {
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  teacherId  Int
+  subject    String
+  trimester  String   // "1", "2", "3"
+  grade      Float
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher User    @relation("TeacherGrades", fields: [teacherId], references: [id])
+
+  @@map("grades")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  subject    String
+  content    String
+  isRead     Boolean  @default(false)
+  sentAt     DateTime @default(now())
+
+  // Relations
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@map("messages")
+}
+
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  date      DateTime
+  present   Boolean
+  reason    String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("attendance")
+}
+
+model SchoolEvent {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  date        DateTime
+  type        String   // "exam", "holiday", "meeting", "event"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("school_events")
+}
+
+model BlogPost {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  author    String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("blog_posts")
+}
